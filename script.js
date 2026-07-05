@@ -13,7 +13,7 @@ const databaseURL = "https://kvdb.io/bv2zwCd5LtzL8q9Rk92g5/answers";
 
 let selectedFoodText = "";
 
-// لما الماوس يقرّب من زرار No يهرب
+// هروب زرار No
 noBtn.addEventListener('mouseover', () => {
     const x = Math.random() * (window.innerWidth - noBtn.offsetWidth);
     const y = Math.random() * (window.innerHeight - noBtn.offsetHeight);
@@ -22,7 +22,7 @@ noBtn.addEventListener('mouseover', () => {
     noBtn.style.top = `${y}px`;
 });
 
-// التنقل بين الصفحات عند الضغط على الأزرار
+// التنقل بين الصفحات
 yesBtn.addEventListener('click', () => {
     page1.classList.add('hidden');
     page2.classList.remove('hidden');
@@ -45,61 +45,64 @@ nextBtn2.addEventListener('click', () => {
     const dateVal = document.getElementById('datePicker').value;
     const timeVal = document.getElementById('timePicker').value;
 
+    // حفظ الكلمات بأسماء موحدة ومحددة (date, time, food)
     const answers = { date: dateVal, time: timeVal, food: selectedFoodText };
 
-    // إرسال البيانات وحفظها أونلاين
     fetch(databaseURL, {
         method: 'POST',
         body: JSON.stringify(answers)
     })
-    .then(() => console.log("Answers saved to cloud!"))
-    .catch(err => console.log("Error saving:", err));
+    .then(() => console.log("Answers saved successfully!"))
+    .catch(err => console.error("Error saving:", err));
 
     // إظهار الرسالة النهائية له
-    document.getElementById('summaryDetails').innerHTML = `
-        Be ready on: <br>
-        📅 ${dateVal || "Any day"} <br>
-        ⏰ At: ${timeVal || "Any time"} <br>
-        🍽️ We are having: ${selectedFoodText || "Surprise Food"}!
-    `;
+    const summaryDetails = document.getElementById('summaryDetails');
+    if (summaryDetails) {
+        summaryDetails.innerHTML = `
+            Be ready on: <br>
+            📅 ${dateVal || "Any day"} <br>
+            ⏰ At: ${timeVal || "Any time"} <br>
+            🍽️ We are having: ${selectedFoodText || "Surprise Food"}!
+        `;
+    }
     page3.classList.add('hidden');
     page4.classList.remove('hidden');
 });
 
-// الكود المطور لقراءة الإجابات بدون أخطاء
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('view') === 'answers') {
-    // إخفاء كل الصفحات وإظهار صفحة الأدمن
-    document.querySelectorAll('.card').forEach(card => card.classList.add('hidden'));
-    const adminPage = document.getElementById('adminPage');
-    const adminDetails = document.getElementById('adminDetails');
-    
-    if (adminPage) adminPage.classList.remove('hidden');
+// الكود السري ليكي إنتِ عشان تقرأي الإجابات من السحابة
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'answers') {
+        // إخفاء الكروت العادية وإظهار صفحة الأدمن
+        document.querySelectorAll('.card').forEach(card => card.classList.add('hidden'));
+        
+        const adminPage = document.getElementById('adminPage');
+        const adminDetails = document.getElementById('adminDetails');
+        
+        if (adminPage) adminPage.classList.remove('hidden');
 
-    fetch('https://kvdb.io/bv2zwCd5LtzL8q9Rk92g5/answers')
+        fetch(databaseURL)
         .then(response => {
-            if (response.status === 404) {
-                return null; // لو مفيش إجابات لسه متسجلة
-            }
+            if (response.status === 404) return null;
             return response.json();
         })
         .then(data => {
             if (!data) {
-                if (adminDetails) {
-                    adminDetails.innerHTML = "لسه مفيش إجابات اتسجلت يا إسراء! ☁️<br><br>جربي ادخلي على اللينك العادي الأول واختاري (يوم ووقت وأكلة) ودوسي Done عشان البيانات تتخزن.";
-                }
+                if (adminDetails) adminDetails.innerHTML = "❌ لسه مفيش إجابات اتسجلت حتى الآن.";
             } else {
                 if (adminDetails) {
+                    // قراءة نفس الكلمات بالظبط (data.date, data.time, data.food)
                     adminDetails.innerHTML = `
-                        📅 <b>اليوم المختار:</b> ${data.day || 'لم يحدد'}<br>
+                        📅 <b>اليوم المختار:</b> ${data.date || 'لم يحدد'}<br>
                         ⏰ <b>الوقت المختار:</b> ${data.time || 'لم يحدد'}<br>
-                        🍔 <b>الأكلة المختارة:</b> ${data.food || 'لم يحدد'}
+                        🍕 <b>الأكل المفضل:</b> ${data.food || 'لم يحدد'}
                     `;
                 }
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Error fetching data:', error);
             if (adminDetails) adminDetails.innerText = "حصل مشكلة أثناء الاتصال بالسحابة!";
         });
-}
+    }
+});
